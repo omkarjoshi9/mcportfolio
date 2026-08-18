@@ -1,26 +1,1460 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-pixel: var(--font-monocraft), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
+/*
+ * Minecraft renders its entire interface on an integer pixel grid, scaled by
+ * the GUI Scale setting. Everything below is sized in multiples of --px (one
+ * game pixel), which is what makes the result read as the real thing rather
+ * than as "pixel-ish".
+ */
+:root {
+  --gui: 3;
+  --px: calc(var(--gui) * 1px);
+
+  /* Widget palette, sampled from the vanilla GUI. */
+  --mc-dirt: #866043;
+  --mc-panel: #c6c6c6;
+  --mc-panel-light: #ffffff;
+  --mc-panel-dark: #555555;
+  --mc-panel-text: #404040;
+  --mc-btn-top: #8b8b8b;
+  --mc-btn-bottom: #6e6e6e;
+  --mc-btn-bevel-light: #a9a9a9;
+  --mc-btn-bevel-dark: #4f4f4f;
+  --mc-yellow: #ffff00;
+  --mc-hover-label: #ffffa0;
+  --mc-muted: #a0a0a0;
+
+  /*
+   * The game draws text shadow one pixel down-right at 25% of the text colour.
+   * These are those exact derivations.
+   */
+  --shadow-white: var(--px) var(--px) 0 #3f3f3f;
+  --shadow-yellow: var(--px) var(--px) 0 #3f3f00;
+  --shadow-hover: var(--px) var(--px) 0 #3f3f28;
+  --shadow-muted: var(--px) var(--px) 0 #282828;
+
+  /* Skybox geometry: the cube must exceed the viewport at every angle. */
+  --panorama-size: 280vmax;
+  --panorama-perspective: 220vmax;
+  --panorama-pitch: 6deg;
+  --panorama-duration: 140s;
+}
+
+@media (max-width: 720px) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --gui: 2;
   }
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #101418;
+  color: #ffffff;
+  font-family: var(--font-pixel);
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+:focus-visible {
+  outline: var(--px) solid #ffffff;
+  outline-offset: var(--px);
+}
+
+/* ---------------------------------------------------------------- panorama */
+
+.panorama {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: #5b7fa6;
+  perspective: var(--panorama-perspective);
+}
+
+.panorama__cube {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  animation: panorama-spin var(--panorama-duration) linear infinite;
+}
+
+.panorama__face {
+  position: absolute;
+  width: var(--panorama-size);
+  height: var(--panorama-size);
+  margin-top: calc(var(--panorama-size) / -2);
+  margin-left: calc(var(--panorama-size) / -2);
+  background-position: center;
+  background-size: cover;
+  /* Deliberately smooth: upscaling a 96px face is what blurs the backdrop,
+     which is far cheaper than filter: blur() on an element this large. */
+  backface-visibility: hidden;
+}
+
+.panorama__face[data-face="0"] {
+  transform: translateZ(calc(var(--panorama-size) / -2));
+}
+.panorama__face[data-face="1"] {
+  transform: rotateY(-90deg) translateZ(calc(var(--panorama-size) / -2));
+}
+.panorama__face[data-face="2"] {
+  transform: rotateY(180deg) translateZ(calc(var(--panorama-size) / -2));
+}
+.panorama__face[data-face="3"] {
+  transform: rotateY(90deg) translateZ(calc(var(--panorama-size) / -2));
+}
+.panorama__face[data-face="4"] {
+  transform: rotateX(90deg) translateZ(calc(var(--panorama-size) / -2));
+}
+.panorama__face[data-face="5"] {
+  transform: rotateX(-90deg) translateZ(calc(var(--panorama-size) / -2));
+}
+
+.panorama__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%),
+    linear-gradient(rgba(10, 14, 20, 0.4), rgba(10, 14, 20, 0.55));
+}
+
+/* The menu camera drifts vertically as it turns, rather than spinning flat.
+   --panorama-pitch grows with FOV so Quake Pro visibly tilts the skybox. */
+@keyframes panorama-spin {
+  0% {
+    transform: rotateX(calc(var(--panorama-pitch) * -0.7)) rotateY(0deg);
+  }
+  50% {
+    transform: rotateX(calc(var(--panorama-pitch) * -1.5)) rotateY(180deg);
+  }
+  100% {
+    transform: rotateX(calc(var(--panorama-pitch) * -0.7)) rotateY(360deg);
+  }
+}
+
+/* -------------------------------------------------------------- main menu */
+
+.menu {
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 14);
+  padding: clamp(1.5rem, 5vh, 3.5rem) 1rem 1rem;
+}
+
+.menu__brand {
+  position: relative;
+  margin-top: auto;
+  text-align: center;
+}
+
+.wordmark {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: calc(var(--px) * 22);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: calc(var(--px) * 1);
+  /* Chained drop-shadows compound, giving a hard outline plus a 3D offset.
+     Brightness runs first so it lifts the stone fill without tinting shadows. */
+  filter: brightness(1.3) drop-shadow(var(--px) 0 0 #1f1f1f)
+    drop-shadow(calc(var(--px) * -1) 0 0 #1f1f1f) drop-shadow(0 var(--px) 0 #1f1f1f)
+    drop-shadow(0 calc(var(--px) * -1) 0 #1f1f1f)
+    drop-shadow(calc(var(--px) * 2) calc(var(--px) * 2) 0 rgba(0, 0, 0, 0.5));
+}
+
+/* The logo letters are stone-textured in game, not flat grey. Clipping per
+   line rather than on the flex container keeps this predictable. */
+.wordmark__line {
+  background-image: url("/textures/stone.png");
+  background-size: calc(var(--px) * 10);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  image-rendering: pixelated;
+}
+
+.menu__tagline {
+  margin: calc(var(--px) * 5) 0 0;
+  font-size: calc(var(--px) * 5);
+  letter-spacing: calc(var(--px) * 2);
+  color: #e0e0e0;
+  text-shadow: var(--shadow-white);
+}
+
+.splash {
+  position: absolute;
+  right: calc(var(--px) * -14);
+  bottom: calc(var(--px) * -4);
+  margin: 0;
+  max-width: 14ch;
+  rotate: -20deg;
+  transform-origin: center;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.2;
+  color: var(--mc-yellow);
+  text-shadow: var(--shadow-yellow);
+  /* The game pulses the splash at 2 Hz; alternating halves it to 0.25s. */
+  animation: splash-pulse 0.25s ease-in-out infinite alternate;
+}
+
+@keyframes splash-pulse {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 1.08;
+  }
+}
+
+.menu__nav {
+  display: flex;
+  width: min(calc(var(--px) * 200), 100%);
+  flex-direction: column;
+  gap: calc(var(--px) * 4);
+}
+
+.menu__row {
+  display: flex;
+  gap: calc(var(--px) * 4);
+}
+
+.menu__row > * {
+  flex: 1;
+  width: auto;
+}
+
+.menu__footer {
+  display: flex;
+  width: 100%;
+  margin-top: auto;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: calc(var(--px) * 2);
+  font-size: calc(var(--px) * 3.5);
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+.menu__disclaimer {
+  max-width: 40ch;
+  text-align: right;
+  color: var(--mc-muted);
+  text-shadow: var(--shadow-muted);
+}
+
+/* ----------------------------------------------------------------- widget */
+
+/* Every vanilla widget is 20 game pixels tall with the same bevelled skin. */
+.mc-widget {
+  display: flex;
+  height: calc(var(--px) * 20);
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--mc-btn-top) 0%, #7a7a7a 55%, var(--mc-btn-bottom) 100%);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--mc-btn-bevel-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--mc-btn-bevel-dark),
+    0 0 0 var(--px) #000000;
+}
+
+.mc-widget__label {
+  padding: 0 calc(var(--px) * 3);
+  font-size: calc(var(--px) * 6);
+  letter-spacing: calc(var(--px) * 0.5);
+  line-height: 1;
+  text-shadow: var(--shadow-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mc-widget:hover {
+  background: linear-gradient(180deg, #a4a4a4 0%, #969696 55%, #888888 100%);
+}
+
+.mc-widget:hover .mc-widget__label {
+  color: var(--mc-hover-label);
+  text-shadow: var(--shadow-hover);
+}
+
+.mc-widget:active {
+  background: linear-gradient(180deg, var(--mc-btn-bottom) 0%, #7a7a7a 55%, var(--mc-btn-top) 100%);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--mc-btn-bevel-dark),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--mc-btn-bevel-light),
+    0 0 0 var(--px) #000000;
+}
+
+/* Menu buttons are the full 200 wide and carry the larger label. */
+.mc-button {
+  width: min(calc(var(--px) * 200), 100%);
+}
+
+.mc-button .mc-widget__label {
+  font-size: calc(var(--px) * 7);
+}
+
+.mc-button[data-variant="narrow"] {
+  width: auto;
+}
+
+/* ---------------------------------------------------------- loading screen */
+
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background-color: var(--mc-dirt);
+  background-image: url("/textures/dirt.png");
+  background-repeat: repeat;
+  background-size: calc(var(--px) * 16);
+  image-rendering: pixelated;
+  transition: opacity 400ms ease;
+}
+
+/*
+ * The game draws the dirt menu background at 25% brightness. Overlaying black
+ * at 75% is the same multiply, and costs less than a brightness() filter.
+ */
+.loading-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.loading-screen[data-closing] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Set before first paint on repeat visits, so the screen never flashes. */
+html.booted .loading-screen {
+  display: none;
+}
+
+.loading-screen__inner {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 8);
+}
+
+.chunk-map {
+  display: grid;
+  grid-template-columns: repeat(11, calc(var(--px) * 4));
+  gap: var(--px);
+}
+
+.chunk-map__cell {
+  aspect-ratio: 1;
+  background: #6a9b41;
+  /* Revealed purely by the --progress custom property, so filling the grid
+     costs no React re-renders. 121 = the cell count. */
+  opacity: clamp(0, calc(var(--progress, 0) * 121 - var(--order)), 1);
+}
+
+.chunk-map__cell[data-tone="1"] {
+  background: #588636;
+}
+.chunk-map__cell[data-tone="2"] {
+  background: #7cae4d;
+}
+.chunk-map__cell[data-tone="3"] {
+  background: #4d7530;
+}
+
+.loading-screen__stage {
+  margin: 0;
+  font-size: calc(var(--px) * 6);
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+.progress {
+  width: min(calc(var(--px) * 120), 72vw);
+  padding: var(--px);
+  background: #000000;
+  box-shadow: 0 0 0 var(--px) #ffffff;
+}
+
+.progress__fill {
+  height: calc(var(--px) * 3);
+  width: calc(var(--progress, 0) * 100%);
+  background: #ffffff;
+}
+
+.loading-screen__skip {
+  position: absolute;
+  right: calc(var(--px) * 6);
+  bottom: calc(var(--px) * 6);
+  height: calc(var(--px) * 16);
+  padding: 0 calc(var(--px) * 4);
+}
+
+.loading-screen__skip .mc-widget__label {
+  font-size: calc(var(--px) * 5);
+}
+
+/* ------------------------------------------------------- panel / sub-pages */
+
+.screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+/* The vanilla inventory panel: light grey, white top-left, dark bottom-right. */
+.mc-panel {
+  display: flex;
+  width: min(calc(var(--px) * 220), 100%);
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 6);
+  padding: calc(var(--px) * 12);
+  text-align: center;
+  background: var(--mc-panel);
+  color: var(--mc-panel-text);
+  box-shadow:
+    inset calc(var(--px) * 2) calc(var(--px) * 2) 0 var(--mc-panel-light),
+    inset calc(var(--px) * -2) calc(var(--px) * -2) 0 var(--mc-panel-dark),
+    0 0 0 calc(var(--px) * 2) #000000;
+}
+
+.mc-panel__title {
+  margin: 0;
+  font-size: calc(var(--px) * 9);
+  font-weight: 400;
+  letter-spacing: calc(var(--px) * 0.5);
+  color: var(--mc-panel-text);
+}
+
+.mc-panel__body {
+  margin: 0;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.8;
+  color: #555555;
+}
+
+.mc-panel__note {
+  margin: 0;
+  font-size: calc(var(--px) * 4);
+  color: #6b6b6b;
+}
+
+.mc-panel .mc-button {
+  margin-top: calc(var(--px) * 2);
+}
+
+/* --------------------------------------------------------------- options */
+
+.options {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 6);
+  padding: calc(var(--px) * 12) 1rem;
+}
+
+/* The game dims the panorama behind any screen opened from the main menu. */
+.options::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.45);
+  transition: background 200ms ease;
+}
+
+/* Night keeps the Options dimmer blue-tinted so Time is obvious on this page. */
+html[data-theme="night"] .options::before {
+  background: rgba(4, 10, 32, 0.35);
+}
+
+.options__title {
+  margin: 0;
+  font-size: calc(var(--px) * 8);
+  font-weight: 400;
+  letter-spacing: calc(var(--px) * 0.5);
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+/* 1.20-era screens rule a faint line under the header and above the footer. */
+.options__divider {
+  width: min(calc(var(--px) * 310), 100%);
+  height: var(--px);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 var(--px) 0 rgba(255, 255, 255, 0.07);
+}
+
+/* Vanilla uses two 150-wide columns on a 160 stride: a 10-pixel gutter. */
+.options__grid {
+  display: grid;
+  width: min(calc(var(--px) * 310), 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--px) * 4) calc(var(--px) * 10);
+}
+
+.options__spacer {
+  margin-top: auto;
+}
+
+@media (max-width: 720px) {
+  .options__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------- slider */
+
+.mc-slider {
+  position: relative;
+  height: calc(var(--px) * 20);
+}
+
+.mc-slider::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #545454;
+  box-shadow:
+    inset var(--px) var(--px) 0 #373737,
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 #6e6e6e,
+    0 0 0 var(--px) #000000;
+}
+
+.mc-slider__input {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+/*
+ * These two rules cannot be merged. An unrecognised pseudo-element anywhere in
+ * a selector list invalidates the entire rule, so each engine needs its own.
+ */
+.mc-slider__input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: calc(var(--px) * 8);
+  height: calc(var(--px) * 20);
+  background: linear-gradient(180deg, var(--mc-btn-top) 0%, var(--mc-btn-bottom) 100%);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--mc-btn-bevel-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--mc-btn-bevel-dark),
+    0 0 0 var(--px) #000000;
+}
+
+.mc-slider__input::-moz-range-thumb {
+  width: calc(var(--px) * 8);
+  height: calc(var(--px) * 20);
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, var(--mc-btn-top) 0%, var(--mc-btn-bottom) 100%);
+  box-shadow:
+    inset var(--px) var(--px) 0 var(--mc-btn-bevel-light),
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 var(--mc-btn-bevel-dark),
+    0 0 0 var(--px) #000000;
+}
+
+.mc-slider__label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  font-size: calc(var(--px) * 6);
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+.mc-slider:hover .mc-slider__label {
+  color: var(--mc-hover-label);
+  text-shadow: var(--shadow-hover);
+}
+
+/* ----------------------------------------------------------- night theme */
+
+html[data-theme="night"] .panorama {
+  background: #050a18;
+}
+
+/* Opacity is safe here — unlike filter, it does not flatten preserve-3d. */
+html[data-theme="night"] .panorama__face {
+  opacity: 0.55;
+}
+
+html[data-theme="night"] .panorama__veil {
+  background:
+    radial-gradient(ellipse at center, rgba(2, 8, 28, 0.35) 0%, rgba(2, 6, 20, 0.88) 100%),
+    linear-gradient(rgba(6, 12, 40, 0.78), rgba(2, 4, 16, 0.92));
+}
+
+/* ------------------------------------------------------------ reduced motion */
+
+html[data-motion="off"] .panorama__cube {
+  animation: none;
+  transform: rotateX(calc(var(--panorama-pitch) * -1));
+}
+
+html[data-motion="off"] .splash {
+  animation: none;
+}
+
+/* Explicit On re-enables motion even when the OS asks for reduced motion. */
+html[data-motion="on"] .panorama__cube {
+  animation: panorama-spin var(--panorama-duration) linear infinite;
+}
+
+html[data-motion="on"] .splash {
+  animation: splash-pulse 0.25s ease-in-out infinite alternate;
+}
+
+html[data-motion="on"] .loading-screen {
+  display: grid;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-motion="auto"] .panorama__cube,
+  html:not([data-motion]) .panorama__cube {
+    animation: none;
+    transform: rotateX(calc(var(--panorama-pitch) * -1));
+  }
+
+  html[data-motion="auto"] .splash,
+  html:not([data-motion]) .splash {
+    animation: none;
+  }
+
+  html[data-motion="auto"] .loading-screen,
+  html:not([data-motion]) .loading-screen {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------ content screens (shared) */
+
+.servers,
+.project,
+.contact {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 5);
+  padding: calc(var(--px) * 10) 1rem calc(var(--px) * 8);
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+.servers::before,
+.project::before,
+.contact::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.servers__title,
+.project__title,
+.contact__title {
+  margin: 0;
+  font-size: calc(var(--px) * 8);
+  font-weight: 400;
+  letter-spacing: calc(var(--px) * 0.5);
+}
+
+.servers__divider,
+.project__divider,
+.contact__divider {
+  width: min(calc(var(--px) * 340), 100%);
+  height: var(--px);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 var(--px) 0 rgba(255, 255, 255, 0.07);
+}
+
+.servers__spacer,
+.project__spacer,
+.contact__spacer {
+  margin-top: auto;
+}
+
+.project__bullets {
+  margin: 0;
+  padding-left: calc(var(--px) * 8);
+  font-size: calc(var(--px) * 4.5);
+  line-height: 1.7;
+  color: #c8c8c8;
+}
+
+.project__stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--px) * 2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project__chip {
+  padding: calc(var(--px) * 1) calc(var(--px) * 3);
+  background: rgba(0, 0, 0, 0.45);
+  font-size: calc(var(--px) * 4);
+  box-shadow: inset 0 0 0 var(--px) #373737;
+}
+
+.servers__actions,
+.project__actions,
+.contact__nav {
+  display: flex;
+  width: min(calc(var(--px) * 200), 100%);
+  flex-direction: column;
+  gap: calc(var(--px) * 4);
+  align-items: stretch;
+}
+
+.servers__actions {
+  width: min(calc(var(--px) * 200), 100%);
+}
+
+.project__actions {
+  width: min(calc(var(--px) * 200), 100%);
+}
+
+/* -------------------------------------------------------------- server list */
+
+.servers__list {
+  display: flex;
+  width: min(calc(var(--px) * 340), 100%);
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.servers__row {
+  display: grid;
+  grid-template-columns: calc(var(--px) * 20) minmax(0, 1fr) auto;
+  gap: calc(var(--px) * 4);
+  align-items: center;
+  padding: calc(var(--px) * 3) calc(var(--px) * 4);
+  background: rgba(0, 0, 0, 0.4);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 0 0 var(--px) #000000;
+}
+
+.servers__row:hover {
+  background: rgba(80, 90, 110, 0.55);
+}
+
+.servers__row:hover .servers__name {
+  color: var(--mc-hover-label);
+  text-shadow: var(--shadow-hover);
+}
+
+.servers__icon {
+  width: calc(var(--px) * 20);
+  height: calc(var(--px) * 20);
+  background: #6a9b41;
+  box-shadow:
+    inset var(--px) var(--px) 0 #8bc34a,
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 #3f6b28,
+    0 0 0 var(--px) #000000;
+  image-rendering: pixelated;
+}
+
+.servers__icon[data-status="wip"] {
+  background: #c6a14a;
+  box-shadow:
+    inset var(--px) var(--px) 0 #e0c060,
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 #8a6a20,
+    0 0 0 var(--px) #000000;
+}
+
+.servers__icon[data-status="private"] {
+  background: #6b6b6b;
+  box-shadow:
+    inset var(--px) var(--px) 0 #8b8b8b,
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 #3f3f3f,
+    0 0 0 var(--px) #000000;
+}
+
+.servers__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: calc(var(--px) * 1);
+}
+
+.servers__name {
+  overflow: hidden;
+  font-size: calc(var(--px) * 5.5);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.servers__motd {
+  overflow: hidden;
+  font-size: calc(var(--px) * 4);
+  color: #a8a8a8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: var(--shadow-muted);
+}
+
+.servers__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(var(--px) * 1);
+}
+
+.servers__version {
+  font-size: calc(var(--px) * 4);
+  color: #c8c8c8;
+}
+
+.servers__ping {
+  display: flex;
+  gap: calc(var(--px) * 1);
+  align-items: flex-end;
+  height: calc(var(--px) * 8);
+}
+
+.servers__ping span {
+  width: calc(var(--px) * 2);
+  background: #555555;
+}
+
+.servers__ping span:nth-child(1) {
+  height: 25%;
+}
+.servers__ping span:nth-child(2) {
+  height: 50%;
+}
+.servers__ping span:nth-child(3) {
+  height: 75%;
+}
+.servers__ping span:nth-child(4) {
+  height: 100%;
+}
+
+.servers__ping[data-status="live"] span {
+  background: #55ff55;
+}
+.servers__ping[data-status="wip"] span:nth-child(-n + 2) {
+  background: #ffff55;
+}
+.servers__ping[data-status="private"] span:nth-child(1) {
+  background: #aaaaaa;
+}
+
+.servers__status {
+  font-size: calc(var(--px) * 3.5);
+  color: var(--mc-muted);
+  text-shadow: var(--shadow-muted);
+}
+
+@media (max-width: 720px) {
+  .servers__row {
+    grid-template-columns: calc(var(--px) * 16) minmax(0, 1fr);
+  }
+
+  .servers__meta {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: calc(var(--px) * 3);
+  }
+}
+
+/* ---------------------------------------------------------- project detail */
+
+.project__motd {
+  width: min(calc(var(--px) * 340), 100%);
+  margin: 0;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+.project__stack {
+  width: min(calc(var(--px) * 340), 100%);
+}
+
+.project__bullets {
+  width: min(calc(var(--px) * 340), 100%);
+}
+
+/* ----------------------------------------------------------------- contact */
+
+.contact__blurb {
+  width: min(calc(var(--px) * 280), 100%);
+  margin: 0;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.7;
+  text-align: center;
+  color: #e0e0e0;
+}
+
+.contact__note {
+  margin: 0;
+  font-size: calc(var(--px) * 4);
+  color: var(--mc-muted);
+  text-shadow: var(--shadow-muted);
+}
+
+.contact__nav {
+  margin-top: calc(var(--px) * 2);
+}
+
+/* ----------------------------------------------------------------- world */
+
+.world {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  background: #152010;
+  color: #ffffff;
+  text-shadow: var(--shadow-white);
+}
+
+.world[data-night],
+html[data-theme="night"] .world {
+  background: #070b14;
+}
+
+.world__visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.world__stage {
+  position: relative;
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: calc(var(--px) * 8) 1rem calc(var(--px) * 40);
+}
+
+.world__sky {
+  position: absolute;
+  inset: 0 0 45% 0;
+  background: linear-gradient(#7eb6d9, #c5dff0);
+  pointer-events: none;
+}
+
+.world[data-night] .world__sky {
+  background: linear-gradient(#0a1020, #1a2744);
+}
+
+.world__star {
+  position: absolute;
+  width: var(--px);
+  height: var(--px);
+  background: #ffffaa;
+}
+
+.world__map {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(16, calc(var(--px) * 10));
+  grid-template-rows: repeat(10, calc(var(--px) * 10));
+  box-shadow: 0 0 0 calc(var(--px) * 2) #000000;
+  image-rendering: pixelated;
+}
+
+.world__tile {
+  width: calc(var(--px) * 10);
+  height: calc(var(--px) * 10);
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  background: #5a8f3a;
+  box-shadow: inset 0 calc(var(--px) * -1) 0 rgba(0, 0, 0, 0.15);
+}
+
+.world__tile[data-tile="p"] {
+  background: #c2a36b;
+}
+.world__tile[data-tile="t"] {
+  background: #2f5c22;
+  box-shadow: inset calc(var(--px) * 3) 0 0 #5a3a1a;
+}
+.world__tile[data-tile="w"] {
+  background: #3a6ea5;
+}
+.world__tile[data-tile="s"] {
+  background: #6aad44;
+}
+.world__tile[data-tile="c"] {
+  background: #d45a1a;
+}
+.world__tile[data-tile="A"] {
+  background: #8a8a8a;
+}
+.world__tile[data-tile="F"] {
+  background: #4a3a32;
+}
+.world__tile[data-tile="K"] {
+  background: #8b5a2b;
+}
+.world__tile[data-tile="E"] {
+  background: #c4a35a;
+}
+.world__tile[data-tile="H"] {
+  background: #2a2a2a;
+}
+.world__tile[data-tile="V"] {
+  background: #6b4a8a;
+}
+.world__tile[data-tile="B"] {
+  background: #1a1a1a;
+}
+.world__tile[data-tile="L"] {
+  background: #aa2222;
+}
+.world__tile[data-tile="O"] {
+  background: #6e6e6e;
+}
+.world__tile[data-tile="O"][data-ore] {
+  background: #3ec6e0;
+}
+.world__tile[data-tile="N"] {
+  background: #c47a6a;
+}
+.world__tile[data-tile="Y"] {
+  background: #f2f2f2;
+}
+.world__tile[data-here] {
+  outline: var(--px) solid #ffff55;
+  outline-offset: calc(var(--px) * -1);
+  background-image: linear-gradient(#3d5c2a 40%, #c6a15b 40% 55%, #3a6ea5 55% 70%, #6b4a2a 70%);
+}
+.world__tile[data-redstone] {
+  box-shadow: inset 0 0 0 var(--px) #cc2222;
+}
+.world__tile[data-tree] {
+  background: #1e4a14;
+}
+
+.world__creeper {
+  position: absolute;
+  right: 12%;
+  bottom: 28%;
+  width: calc(var(--px) * 8);
+  height: calc(var(--px) * 12);
+  background: #167d16;
+  box-shadow: inset var(--px) var(--px) 0 #0d3d0d;
+  animation: creeper-bob 0.4s steps(2) infinite;
+}
+
+@keyframes creeper-bob {
+  to {
+    transform: translateY(calc(var(--px) * -1));
+  }
+}
+
+.world__hud {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--px) * 3);
+  padding: calc(var(--px) * 4);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+
+.world__hint {
+  margin: 0;
+  font-size: calc(var(--px) * 4);
+  color: #e0e0e0;
+}
+
+.world__hotbar {
+  display: flex;
+  gap: var(--px);
+}
+
+.world__slot {
+  display: grid;
+  width: calc(var(--px) * 16);
+  height: calc(var(--px) * 16);
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: calc(var(--px) * 8);
+  box-shadow:
+    inset var(--px) var(--px) 0 #373737,
+    inset calc(var(--px) * -1) calc(var(--px) * -1) 0 #8b8b8b,
+    0 0 0 var(--px) #000;
+}
+
+.world__slot abbr {
+  text-decoration: none;
+  color: #55ff55;
+}
+
+.world__hud-row {
+  display: flex;
+  gap: calc(var(--px) * 4);
+}
+
+.world__f3 {
+  position: fixed;
+  top: calc(var(--px) * 4);
+  left: calc(var(--px) * 4);
+  z-index: 6;
+  margin: 0;
+  font: inherit;
+  font-size: calc(var(--px) * 4);
+  line-height: 1.5;
+  color: #ffffaa;
+  text-shadow: var(--shadow-yellow);
+  pointer-events: none;
+  white-space: pre;
+}
+
+.world__dialogue {
+  position: fixed;
+  right: 8%;
+  bottom: 28%;
+  left: 8%;
+  z-index: 7;
+  padding: calc(var(--px) * 6);
+  border: 0;
+  background: rgba(0, 0, 0, 0.82);
+  color: #ffffff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 0 0 calc(var(--px) * 2) #000;
+}
+
+.world__dialogue strong {
+  display: block;
+  margin-bottom: calc(var(--px) * 3);
+  color: var(--mc-yellow);
+  font-weight: 400;
+}
+
+.world__dialogue span {
+  display: block;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.6;
+}
+
+.world__dialogue em {
+  display: block;
+  margin-top: calc(var(--px) * 4);
+  font-size: calc(var(--px) * 3.5);
+  font-style: normal;
+  color: var(--mc-muted);
+}
+
+.world__trade {
+  position: fixed;
+  bottom: 36%;
+  z-index: 6;
+}
+
+.world__ghost-btn {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.world__panel {
+  position: fixed;
+  inset: 18% 12%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 8);
+  overflow: auto;
+  background: var(--mc-panel);
+  color: var(--mc-panel-text);
+  text-shadow: none;
+  box-shadow:
+    inset calc(var(--px) * 2) calc(var(--px) * 2) 0 #fff,
+    inset calc(var(--px) * -2) calc(var(--px) * -2) 0 #555,
+    0 0 0 calc(var(--px) * 2) #000;
+}
+
+.world__panel h2 {
+  margin: 0;
+  font-size: calc(var(--px) * 8);
+  font-weight: 400;
+}
+
+.world__panel p,
+.world__panel li {
+  font-size: calc(var(--px) * 5);
+  line-height: 1.6;
+}
+
+.world__cmd {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9;
+  padding: calc(var(--px) * 3);
+  background: #000;
+}
+
+.world__cmd label {
+  display: flex;
+  gap: calc(var(--px) * 2);
+  font-size: calc(var(--px) * 5);
+}
+
+.world__cmd input {
+  flex: 1;
+  border: 0;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+
+.world__term {
+  display: none;
+}
+
+.world__toasts {
+  position: fixed;
+  top: calc(var(--px) * 6);
+  right: calc(var(--px) * 6);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.world__toasts li {
+  width: min(calc(var(--px) * 160), 72vw);
+  padding: calc(var(--px) * 4);
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 0 var(--px) #555;
+}
+
+.world__toasts strong {
+  display: block;
+  color: var(--mc-yellow);
+  font-size: calc(var(--px) * 4);
+  font-weight: 400;
+}
+
+.world__toasts span {
+  display: block;
+  font-size: calc(var(--px) * 5);
+}
+
+.world__toasts small {
+  display: block;
+  color: #ccc;
+  font-size: calc(var(--px) * 4);
+}
+
+.chamber {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--px) * 6);
+  padding: calc(var(--px) * 10) 1rem 8rem;
+}
+
+.chamber__coord {
+  margin: 0;
+  font-size: calc(var(--px) * 4);
+  color: var(--mc-muted);
+}
+
+.chamber__set {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--px) * 4);
+  justify-content: center;
+  max-width: 52rem;
+}
+
+.hotspot {
+  min-width: calc(var(--px) * 60);
+  min-height: calc(var(--px) * 28);
+  padding: calc(var(--px) * 4);
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font: inherit;
+  font-size: calc(var(--px) * 5);
+  cursor: pointer;
+  box-shadow: 0 0 0 var(--px) #000;
+}
+
+.hotspot:hover {
+  color: var(--mc-hover-label);
+}
+
+.chamber--academy {
+  background: radial-gradient(circle at 50% 20%, #6a6a6a, #2a2a28 70%);
+}
+.chamber--foundry {
+  background: radial-gradient(circle at 20% 80%, #6a2010, #1a0a08 70%);
+}
+.chamber--lab {
+  background: #0b1210;
+}
+.chamber--bunker {
+  background: #12100c;
+}
+.chamber--workshop {
+  background: #3a2a18;
+}
+.chamber--arena {
+  background: #4a3a22;
+}
+.chamber--temple {
+  background: linear-gradient(#87b8e0, #e8f4ff);
+  color: #203040;
+  text-shadow: none;
+}
+.chamber--end {
+  background: #100418;
+}
+.chamber--crash {
+  background: #000;
+}
+
+.chamber__term {
+  width: min(calc(var(--px) * 340), 92vw);
+  padding: calc(var(--px) * 4);
+  overflow: auto;
+  background: #000;
+  color: #55ff55;
+  font-size: calc(var(--px) * 4);
+  line-height: 1.5;
+  text-shadow: none;
+}
+
+.chamber__crowd {
+  display: flex;
+  flex-wrap: wrap;
+  width: min(36rem, 90vw);
+  gap: 3px;
+}
+
+.chamber__dot {
+  width: 8px;
+  height: 10px;
+  background: hsl(calc(var(--i) * 17), 40%, 50%);
+}
+
+.chamber__whisper {
+  max-width: 40rem;
+  margin: 0;
+  font-size: calc(var(--px) * 4.5);
+  line-height: 1.6;
+  color: #c8c8c8;
+}
+
+.chamber__poem {
+  max-width: 36rem;
+  font-size: calc(var(--px) * 5);
+  line-height: 1.8;
+}
+
+.chamber__poem p {
+  margin: 0 0 0.6em;
+}
+
+.world__dirt {
+  width: calc(var(--px) * 10);
+  height: calc(var(--px) * 10);
+  border: 0;
+  background: #866043;
+  cursor: pointer;
+}
+
+.chamber__back {
+  margin-top: calc(var(--px) * 4);
+}
+
+.hotspot--void {
+  background: #000;
+  color: #aa55ff;
+}
+
+@media (max-width: 720px) {
+  .world__map {
+    grid-template-columns: repeat(16, calc(var(--px) * 7));
+    grid-template-rows: repeat(10, calc(var(--px) * 7));
+  }
+
+  .world__tile {
+    width: calc(var(--px) * 7);
+    height: calc(var(--px) * 7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world__creeper {
+    animation: none;
+  }
 }
