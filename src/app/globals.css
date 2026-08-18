@@ -163,7 +163,11 @@ body {
 
 .wordmark {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: calc(var(--px) * 6);
   margin: 0;
   font-size: calc(var(--px) * 22);
   font-weight: 400;
@@ -178,7 +182,7 @@ body {
 }
 
 /* The logo letters are stone-textured in game, not flat grey. Clipping per
-   line rather than on the flex container keeps this predictable. */
+   word rather than on the flex container keeps this predictable. */
 .wordmark__line {
   background-image: url("/textures/stone.png");
   background-size: calc(var(--px) * 10);
