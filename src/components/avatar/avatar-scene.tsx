@@ -15,7 +15,7 @@ const PANTS_DARK = "#222f8c";
 const SHOE = "#1d1d22";
 const SOLE = "#8a8a90";
 
-const HEAD_MAX_YAW = Math.PI / 2;
+const HEAD_MAX_YAW = THREE.MathUtils.degToRad(60);
 const HEAD_MAX_PITCH = 0.35;
 
 type Painter = (ctx: CanvasRenderingContext2D, w: number, h: number) => void;
@@ -168,7 +168,7 @@ function Character({ animate }: { animate: boolean }) {
     const t = animate ? clock.elapsedTime : 0;
     root.current.rotation.y = -0.5 + Math.sin(t * 0.6) * 0.45;
     root.current.position.y = Math.sin(t * 1.6) * 0.5;
-    // The head follows the pointer across a 180 degree arc (90 degrees each way) and no further.
+    // The head follows the pointer from -60 to +60 degrees and no further.
     const yaw = animate ? THREE.MathUtils.clamp(pointer.x, -1, 1) * HEAD_MAX_YAW : 0;
     const pitch = animate ? THREE.MathUtils.clamp(-pointer.y, -1, 1) * HEAD_MAX_PITCH : 0;
     head.current.rotation.y = THREE.MathUtils.damp(head.current.rotation.y, yaw, 6, delta);
