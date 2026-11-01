@@ -2,49 +2,43 @@ import { McButton } from "@/components/mc-button";
 import { PROFILE } from "@/lib/content/profile";
 import { SITE } from "@/lib/site";
 
-/** A plain résumé page, laid out with the same panel as a project detail. */
+/** A relaxed first-person page, laid out with the same panel as a project detail. */
 export function AboutScreen() {
-  const { education } = PROFILE;
-
   return (
     <main className="project">
       <h1 className="project__title">About Me</h1>
       <div className="project__divider" />
 
-      <p className="project__motd">{PROFILE.bio}</p>
-
-      <section className="about__section" aria-labelledby="about-education">
-        <h2 className="about__heading" id="about-education">
-          Education
-        </h2>
-        <p className="about__role">{education.school}</p>
-        <p className="about__meta">
-          {education.degree} · {education.dates} · {education.detail}
-        </p>
+      <section className="about__section" aria-label="Intro">
+        {PROFILE.intro.map((line) => (
+          <p key={line.slice(0, 32)} className="project__motd">
+            {line}
+          </p>
+        ))}
       </section>
 
-      <section className="about__section" aria-labelledby="about-experience">
-        <h2 className="about__heading" id="about-experience">
-          Experience
+      <section className="about__section" aria-labelledby="about-work">
+        <h2 className="about__heading" id="about-work">
+          What I&apos;ve been up to
         </h2>
         {PROFILE.experience.map((job) => (
-          <article key={job.company}>
+          <article key={job.where}>
             <p className="about__role">
-              {job.role} · {job.company}
+              {job.what} @ {job.where}
             </p>
             <p className="about__meta">{job.dates}</p>
             <ul className="project__bullets">
-              {job.bullets.map((bullet) => (
-                <li key={bullet.slice(0, 48)}>{bullet}</li>
+              {job.story.map((line) => (
+                <li key={line.slice(0, 48)}>{line}</li>
               ))}
             </ul>
           </article>
         ))}
       </section>
 
-      <section className="about__section" aria-labelledby="about-skills">
-        <h2 className="about__heading" id="about-skills">
-          Skills
+      <section className="about__section" aria-labelledby="about-stack">
+        <h2 className="about__heading" id="about-stack">
+          Stuff I work with
         </h2>
         {Object.entries(PROFILE.skills).map(([group, items]) => (
           <div key={group}>
@@ -60,19 +54,13 @@ export function AboutScreen() {
         ))}
       </section>
 
-      <section className="about__section" aria-labelledby="about-more">
-        <h2 className="about__heading" id="about-more">
-          Leadership &amp; Certifications
+      <section className="about__section" aria-labelledby="about-offline">
+        <h2 className="about__heading" id="about-offline">
+          Outside the editor
         </h2>
         <ul className="project__bullets">
-          {PROFILE.extracurricular.map((item) => (
-            <li key={item.title}>
-              {item.title}
-              {item.dates ? ` (${item.dates})` : ""}. {item.detail}
-            </li>
-          ))}
-          {PROFILE.certifications.map((cert) => (
-            <li key={cert}>{cert}</li>
+          {PROFILE.offline.map((line) => (
+            <li key={line.slice(0, 48)}>{line}</li>
           ))}
         </ul>
       </section>
@@ -81,7 +69,7 @@ export function AboutScreen() {
       <div className="project__divider" />
       <div className="project__actions">
         <McButton href={SITE.resume}>Download Resume</McButton>
-        <McButton href="/contact">Contact</McButton>
+        <McButton href="/contact">Say Hi</McButton>
         <McButton href="/">Done</McButton>
       </div>
     </main>
