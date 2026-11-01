@@ -22,6 +22,7 @@ export function MainMenu() {
 
       <nav className="menu__nav" aria-label="Main menu">
         <McButton href="/projects">Projects</McButton>
+        <McButton href="/about">About Me</McButton>
         <div className="menu__row">
           <McButton href="/options" variant="narrow">
             Options

@@ -781,6 +781,33 @@ html[data-motion="on"] .loading-screen {
   width: min(calc(var(--px) * 200), 100%);
 }
 
+.about__section {
+  display: flex;
+  width: min(calc(var(--px) * 340), 100%);
+  flex-direction: column;
+  gap: calc(var(--px) * 2);
+}
+
+.about__heading {
+  margin: calc(var(--px) * 3) 0 0;
+  font-size: calc(var(--px) * 6);
+  font-weight: 400;
+  color: var(--mc-yellow);
+  text-shadow: var(--shadow-yellow);
+}
+
+.about__role {
+  margin: 0;
+  font-size: calc(var(--px) * 5);
+}
+
+.about__meta {
+  margin: 0;
+  font-size: calc(var(--px) * 4);
+  color: var(--mc-muted);
+  text-shadow: var(--shadow-muted);
+}
+
 /* -------------------------------------------------------------- server list */
 
 .servers__list {
