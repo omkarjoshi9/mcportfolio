@@ -22,9 +22,6 @@ export const FOV_DEFAULT = 70;
  */
 export const FOV_CONSTANT = 15400;
 
-/** Default pitch (degrees) used by panorama-spin when FOV is Normal. */
-export const PITCH_DEFAULT = 6;
-
 export type Settings = {
   gui: GuiScale;
   fov: number;

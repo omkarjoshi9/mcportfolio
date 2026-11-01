@@ -1,3 +1,4 @@
+import { Avatar } from "@/components/avatar/avatar";
 import { McButton } from "@/components/mc-button";
 import { SplashText } from "@/components/splash-text";
 import { SITE } from "@/lib/site";
@@ -32,6 +33,8 @@ export function MainMenu() {
           </McButton>
         </div>
       </nav>
+
+      <Avatar />
 
       <footer className="menu__footer">
         <span>

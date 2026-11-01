@@ -147,6 +147,7 @@ body {
 /* -------------------------------------------------------------- main menu */
 
 .menu {
+  position: relative;
   display: flex;
   min-height: 100dvh;
   flex-direction: column;
@@ -240,6 +241,23 @@ body {
 .menu__row > * {
   flex: 1;
   width: auto;
+}
+
+/* 3D avatar: floats beside the buttons on wide screens, hidden when it would crowd them. */
+.avatar {
+  position: absolute;
+  right: 1rem;
+  bottom: clamp(3rem, 12vh, 7rem);
+  /* Fill the gutter beside the menu column (200 game pixels wide), never overlap it. */
+  width: clamp(0px, calc((100vw - var(--px) * 200) / 2 - 2rem), 22rem);
+  aspect-ratio: 3 / 5;
+  pointer-events: none;
+}
+
+@media (max-width: 62rem) {
+  .avatar {
+    display: none;
+  }
 }
 
 .menu__footer {
