@@ -11,7 +11,7 @@ export function ContactScreen() {
       <div className="contact__divider" />
 
       <p className="contact__blurb">
-        Reach me about agentic AI work, collaborations, or a shoot — {SITE.location}.
+        Reach me about agentic AI work, or collaborations — {SITE.location}.
       </p>
 
       <nav className="contact__nav" aria-label="Contact links">

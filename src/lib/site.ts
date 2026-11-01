@@ -5,9 +5,9 @@ export const SITE = {
   firstName: "OMKAR",
   lastName: "JOSHI",
   fullName: PROFILE.fullName,
-  tagline: "Agentic AI · Developer & Photographer",
+  tagline: "Agentic AI · Developer",
   description:
-    "Portfolio of Omkar Joshi — agentic AI systems, Gen AI projects, and photography, built as a blocky sandbox interface.",
+    "Portfolio of Omkar Joshi — agentic AI systems and Gen AI projects, built as a blocky sandbox interface.",
   email: PROFILE.email,
   github: PROFILE.github,
   linkedin: PROFILE.linkedin,
