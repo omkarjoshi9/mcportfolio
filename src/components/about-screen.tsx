@@ -1,5 +1,6 @@
 import { McButton } from "@/components/mc-button";
 import { PROFILE } from "@/lib/content/profile";
+import { SITE } from "@/lib/site";
 
 /** A plain résumé page, laid out with the same panel as a project detail. */
 export function AboutScreen() {
@@ -79,6 +80,7 @@ export function AboutScreen() {
       <div className="project__spacer" />
       <div className="project__divider" />
       <div className="project__actions">
+        <McButton href={SITE.resume}>Download Resume</McButton>
         <McButton href="/contact">Contact</McButton>
         <McButton href="/">Done</McButton>
       </div>

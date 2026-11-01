@@ -18,6 +18,7 @@ export function ContactScreen() {
         <McButton href={`mailto:${SITE.email}`}>Email</McButton>
         <McButton href={SITE.linkedin}>LinkedIn</McButton>
         <McButton href={SITE.github}>GitHub</McButton>
+        <McButton href={SITE.resume}>Resume</McButton>
       </nav>
 
       <p className="contact__note">{SITE.email}</p>
