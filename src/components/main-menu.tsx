@@ -36,9 +36,6 @@ export function MainMenu() {
       <Avatar />
 
       <footer className="menu__footer">
-        <span>
-          {SITE.version} ({SITE.framework})
-        </span>
         <span className="menu__disclaimer">{SITE.disclaimer}</span>
       </footer>
     </main>

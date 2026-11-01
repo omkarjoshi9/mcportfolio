@@ -13,8 +13,6 @@ export const SITE = {
   linkedin: PROFILE.linkedin,
   location: PROFILE.location,
   resume: "/Omkar-Joshi-Resume.pdf",
-  version: "v1.0.0",
-  framework: "Next.js 16",
   /**
    * Wording required by Mojang's usage guidelines for anything that borrows the
    * look of the game. See docs/01-licensing.md.

@@ -206,7 +206,7 @@ body {
   right: calc(var(--px) * -14);
   bottom: calc(var(--px) * -4);
   margin: 0;
-  max-width: 14ch;
+  max-width: 18ch;
   rotate: -20deg;
   transform-origin: center;
   font-size: calc(var(--px) * 5);
@@ -275,6 +275,7 @@ body {
 
 .menu__disclaimer {
   max-width: 40ch;
+  margin-left: auto;
   text-align: right;
   color: var(--mc-muted);
   text-shadow: var(--shadow-muted);
