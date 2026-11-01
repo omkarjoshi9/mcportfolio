@@ -25,6 +25,13 @@ export const metadata: Metadata = {
     template: `%s — ${SITE.fullName}`,
   },
   description: SITE.description,
+  openGraph: {
+    type: "website",
+    siteName: SITE.fullName,
+    title: `${SITE.fullName} — ${SITE.tagline}`,
+    description: SITE.description,
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 /**

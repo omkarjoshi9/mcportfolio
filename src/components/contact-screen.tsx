@@ -11,13 +11,14 @@ export function ContactScreen() {
       <div className="contact__divider" />
 
       <p className="contact__blurb">
-        Reach me about agentic AI work, collaborations, or a shoot — {SITE.location}.
+        Reach me about agentic AI work, or collaborations — {SITE.location}.
       </p>
 
       <nav className="contact__nav" aria-label="Contact links">
         <McButton href={`mailto:${SITE.email}`}>Email</McButton>
         <McButton href={SITE.linkedin}>LinkedIn</McButton>
         <McButton href={SITE.github}>GitHub</McButton>
+        <McButton href={SITE.resume}>Resume</McButton>
       </nav>
 
       <p className="contact__note">{SITE.email}</p>

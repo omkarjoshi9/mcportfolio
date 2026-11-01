@@ -13,14 +13,15 @@ type McButtonProps = {
   variant?: "default" | "narrow";
 };
 
+/** Anything the browser should handle itself rather than the Next router. */
 function isExternal(href: string): boolean {
-  return /^(https?:|mailto:)/i.test(href);
+  return /^(https?:|mailto:)/i.test(href) || /\.pdf$/i.test(href);
 }
 
 /**
  * A menu button at Minecraft's real widget proportion (200x20 game pixels).
  *
- * Internal routes use Next Link; http(s)/mailto use a plain anchor.
+ * Internal routes use Next Link; http(s), mailto and PDF files use a plain anchor.
  */
 export function McButton({ href, children, variant = "default" }: McButtonProps) {
   const className = "mc-widget mc-button";

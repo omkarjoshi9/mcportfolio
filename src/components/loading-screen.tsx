@@ -40,7 +40,7 @@ const CELL_ORDER: number[] = (() => {
 const STAGES = [
   { at: 0, label: "Loading terrain" },
   { at: 0.35, label: "Building terrain" },
-  { at: 0.62, label: "Loading photos" },
+  { at: 0.62, label: "Loading projects" },
   { at: 0.85, label: "Joining world" },
 ] as const;
 

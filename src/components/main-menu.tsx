@@ -1,3 +1,4 @@
+import { Avatar } from "@/components/avatar/avatar";
 import { McButton } from "@/components/mc-button";
 import { SplashText } from "@/components/splash-text";
 import { SITE } from "@/lib/site";
@@ -21,7 +22,6 @@ export function MainMenu() {
 
       <nav className="menu__nav" aria-label="Main menu">
         <McButton href="/projects">Projects</McButton>
-        <McButton href="/photography">Photography</McButton>
         <McButton href="/about">About Me</McButton>
         <div className="menu__row">
           <McButton href="/options" variant="narrow">
@@ -33,10 +33,9 @@ export function MainMenu() {
         </div>
       </nav>
 
+      <Avatar />
+
       <footer className="menu__footer">
-        <span>
-          {SITE.version} ({SITE.framework})
-        </span>
         <span className="menu__disclaimer">{SITE.disclaimer}</span>
       </footer>
     </main>
