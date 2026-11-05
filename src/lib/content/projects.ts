@@ -1,7 +1,10 @@
 export type ProjectStatus = "live" | "wip" | "private";
 
+export type ProjectCategoryId = "current" | "early";
+
 export type Project = {
   slug: string;
+  category: ProjectCategoryId;
   title: string;
   /** Two short MOTD lines for the server list. */
   motd: [string, string];
@@ -13,6 +16,12 @@ export type Project = {
   bullets: string[];
 };
 
+/** Server-list sections, in display order. */
+export const PROJECT_CATEGORIES: { id: ProjectCategoryId; title: string }[] = [
+  { id: "current", title: "Current Projects" },
+  { id: "early", title: "early days😵" },
+];
+
 /**
  * Projects drawn from the READMEs on github.com/omkarjoshi9.
  * Static only — no runtime GitHub API.
@@ -20,6 +29,7 @@ export type Project = {
 export const PROJECTS: Project[] = [
   {
     slug: "agentic-pentester",
+    category: "current",
     title: "Agentic Pentester",
     motd: [
       "Autonomous AI agent that plans, runs and reports web pentests.",
@@ -38,45 +48,8 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    slug: "deployx",
-    title: "DeploX",
-    motd: [
-      "A mini Vercel: paste a GitHub URL, get a live site.",
-      "Queue-based builds, S3 storage, one subdomain per deploy.",
-    ],
-    stack: ["TypeScript", "Node.js", "Redis", "S3 / MinIO", "Docker", "Next.js"],
-    version: "TypeScript",
-    status: "live",
-    repoUrl: "https://github.com/omkarjoshi9/DeploX",
-    bullets: [
-      "A deployment platform in three services: an upload service clones the repo, a deploy service builds it, and a request handler serves the result at <id>.deplox.com.",
-      "POST /deploy returns a 10-character deployment id immediately; GET /status then reports cloning, queued, building, deployed or failed.",
-      "Builds run off a Redis queue with in-flight and dead-letter lists plus retry counts, so a crashed or failing build is retried and then parked instead of lost.",
-      "Source and built output live in S3-compatible storage (MinIO locally), and the request handler maps each subdomain to its dist folder.",
-      "A Next.js frontend submits repos and polls build status; Docker Compose brings up Redis and MinIO for local development.",
-    ],
-  },
-  {
-    slug: "devsync",
-    title: "DevSync",
-    motd: [
-      "Real-time collaborative code editor with a safe run button.",
-      "Live rooms over WebSockets, code executed in Docker sandboxes.",
-    ],
-    stack: ["TypeScript", "Node.js", "Express", "Socket.io", "PostgreSQL", "Redis", "Docker"],
-    version: "TypeScript",
-    status: "wip",
-    repoUrl: "https://github.com/omkarjoshi9/DevSync",
-    bullets: [
-      "Create or join a room, edit code together in real time, and run it without touching your own machine.",
-      "Express backend with email/password and Google OAuth sign-in, JWT access and refresh tokens, and password reset.",
-      "Password-protected rooms synchronised over Socket.io, with Redis pub/sub keeping state consistent.",
-      "Code runs inside isolated Docker containers fed by a Bull job queue, covering 10+ languages.",
-      "Rate limiting, input validation and a PostgreSQL schema that records every execution.",
-    ],
-  },
-  {
     slug: "job-hunt",
+    category: "current",
     title: "jobdigest",
     motd: [
       "A daily Telegram digest of intern and new-grad jobs in India.",
@@ -96,6 +69,7 @@ export const PROJECTS: Project[] = [
   },
   {
     slug: "age-of-umpires",
+    category: "current",
     title: "Age of Umpires",
     motd: [
       "Guess the umpire's age; the third umpire confirms.",
@@ -114,44 +88,8 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    slug: "agentic-search",
-    title: "Agentic Search",
-    motd: [
-      "A team of AI agents that researches a question and checks its own work.",
-      "Plan, search, scrape, report, review, loop.",
-    ],
-    stack: ["Python", "LangGraph", "LangChain", "Groq", "Serper", "Streamlit"],
-    version: "LangGraph",
-    status: "live",
-    repoUrl: "https://github.com/omkarjoshi9/Agentic_Search",
-    bullets: [
-      "Turns one research question into a full pipeline: a Planner picks the query, Google Serper fetches results, a Selector chooses the best source, and a scraper reads the page.",
-      "A Reporter writes a cited answer, then a Reviewer judges its comprehensiveness, citations and relevance.",
-      "A Router acts on the review and sends the work back to the Planner, Selector or Reporter, or finishes, so weak answers get another pass.",
-      "Agents exchange JSON-schema outputs (Groq JSON mode) so routing never depends on parsing free text.",
-      "A Streamlit chat interface shows each agent's output live as the graph runs.",
-    ],
-  },
-  {
-    slug: "repo-intel-bot",
-    title: "GitHub Repo Intelligence Bot",
-    motd: [
-      "AI summaries of new commits and pull requests, sent to Slack.",
-      "LangGraph agents watching every repo you own.",
-    ],
-    stack: ["Python", "LangGraph", "GitHub REST API", "OpenAI API", "Slack Webhooks"],
-    version: "LangGraph",
-    status: "live",
-    repoUrl: "https://github.com/omkarjoshi9/GitHub-Repo-Intelligence-Bot",
-    bullets: [
-      "Watches all of my GitHub repositories and posts a short, readable summary of what changed to a Slack channel.",
-      "A LangGraph orchestrator coordinates a Commit agent, a PR agent and a Notifier agent, each with one job.",
-      "Uses the GitHub REST API to fetch activity and gpt-4o-mini to summarise commits and pull requests cheaply.",
-      "Configurable poll interval and repo cap, with switches to skip forks and archived repos and to choose public, private or all.",
-    ],
-  },
-  {
     slug: "sqli-pipeline",
+    category: "current",
     title: "SQLi Detection Pipeline",
     motd: [
       "Cloud-native AWS pipeline that catches SQL injection.",
@@ -170,22 +108,62 @@ export const PROJECTS: Project[] = [
     ],
   },
   {
-    slug: "psl-ai-foundry",
-    title: "Windows AI Foundry Research",
+    slug: "zerodha-mcp-server",
+    category: "early",
+    title: "zerodha-mcp-server",
     motd: [
-      "Research log on local-first AI, RAG and Copilot+ PCs.",
-      "Six weeks building on Windows AI Foundry.",
+      "An MCP server that lets an AI assistant buy and sell stocks on Zerodha.",
+      "Two tools over stdio, wired to the Kite Connect API.",
     ],
-    stack: ["Windows AI Foundry", "Foundry Local", "ONNX Runtime", "Pinecone", "RAG", "Python"],
-    version: "Python",
-    status: "wip",
-    repoUrl: "https://github.com/omkarjoshi9/PSL_AI_Foundry",
+    stack: ["TypeScript", "Bun", "Model Context Protocol", "Kite Connect", "Zod"],
+    version: "TypeScript",
+    status: "live",
+    repoUrl: "https://github.com/omkarjoshi9/zerodha-mcp-server",
     bullets: [
-      "A week-by-week record of a research internship exploring Microsoft's local-first AI stack, from Foundry Local and Windows ML to Copilot+ PC hardware.",
-      "Compared Windows AI Foundry with Azure AI Foundry and Ollama on deployment, scalability, privacy and latency.",
-      "Built a Financial Report Generator on Foundry Local, then a full RAG application using Pinecone.",
-      "The RAG pipeline: query rewriting, HyDE, retrieval, reranking and fusion RAG before generation.",
-      "Benchmarked Phi-3 Mini on Foundry against Ollama and explored NPU-accelerated inference on Copilot+ PCs.",
+      "A small Model Context Protocol server, built on the official TypeScript SDK and run with Bun, that exposes a Zerodha account to an MCP client such as Claude Desktop.",
+      "Registers two tools, buy-stock and sell-stock, each taking a stock symbol and a quantity validated with Zod.",
+      "Both tools call the Kite Connect API to place a regular market order on NSE with the CNC (delivery) product.",
+      "Talks to the client over stdio; there is no strategy logic, so every trade happens only when the assistant calls a tool.",
+    ],
+  },
+  {
+    slug: "devsync",
+    category: "early",
+    title: "DevSync",
+    motd: [
+      "Real-time collaborative code editor with a safe run button.",
+      "Live rooms over WebSockets, code executed in Docker sandboxes.",
+    ],
+    stack: ["TypeScript", "Node.js", "Express", "Socket.io", "PostgreSQL", "Redis", "Docker"],
+    version: "TypeScript",
+    status: "wip",
+    repoUrl: "https://github.com/omkarjoshi9/DevSync",
+    bullets: [
+      "Create or join a room, edit code together in real time, and run it without touching your own machine.",
+      "Express backend with email/password and Google OAuth sign-in, JWT access and refresh tokens, and password reset.",
+      "Password-protected rooms synchronised over Socket.io, with Redis pub/sub keeping state consistent.",
+      "Code runs inside isolated Docker containers fed by a Bull job queue, covering 10+ languages.",
+      "Rate limiting, input validation and a PostgreSQL schema that records every execution.",
+    ],
+  },
+  {
+    slug: "deployx",
+    category: "early",
+    title: "DeploX",
+    motd: [
+      "A mini Vercel: paste a GitHub URL, get a live site.",
+      "Queue-based builds, S3 storage, one subdomain per deploy.",
+    ],
+    stack: ["TypeScript", "Node.js", "Redis", "S3 / MinIO", "Docker", "Next.js"],
+    version: "TypeScript",
+    status: "live",
+    repoUrl: "https://github.com/omkarjoshi9/DeploX",
+    bullets: [
+      "A deployment platform in three services: an upload service clones the repo, a deploy service builds it, and a request handler serves the result at <id>.deplox.com.",
+      "POST /deploy returns a 10-character deployment id immediately; GET /status then reports cloning, queued, building, deployed or failed.",
+      "Builds run off a Redis queue with in-flight and dead-letter lists plus retry counts, so a crashed or failing build is retried and then parked instead of lost.",
+      "Source and built output live in S3-compatible storage (MinIO locally), and the request handler maps each subdomain to its dist folder.",
+      "A Next.js frontend submits repos and polls build status; Docker Compose brings up Redis and MinIO for local development.",
     ],
   },
 ];

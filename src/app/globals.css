@@ -811,6 +811,21 @@ html[data-motion="on"] .loading-screen {
 
 /* -------------------------------------------------------------- server list */
 
+.servers__category {
+  display: flex;
+  width: min(calc(var(--px) * 340), 100%);
+  flex-direction: column;
+  gap: calc(var(--px) * 3);
+}
+
+.servers__heading {
+  margin: 0;
+  font-size: calc(var(--px) * 6);
+  font-weight: 400;
+  color: var(--mc-yellow);
+  text-shadow: var(--shadow-yellow);
+}
+
 .servers__list {
   display: flex;
   width: min(calc(var(--px) * 340), 100%);
